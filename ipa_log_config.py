@@ -71,13 +71,13 @@ class SSSD(object):
         self._sssdconfig.write()
 
     def _restart(self):
-        print 'Condrestarting SSSD'
+        print ('Condrestarting SSSD')
         if call(['systemctl', 'condrestart', 'sssd']) != 0:
             raise ExternalCommandError('Failed to condrestart SSSD')
 
     def get_domains(self):
         domains = self._sssdconfig.list_domains()
-        print 'SSSD domains: ' + ', '.join(domains)
+        print ('SSSD domains: ' + ', '.join(domains))
         return domains
 
     def get_realms(self):
@@ -87,20 +87,20 @@ class SSSD(object):
                 realms.append(dom.options['ipa_domain'].upper())
             else:
                 realms.append(dom.name.upper())
-        print 'Realms: ' + ', '.join(realms)
+        print ('Realms: ' + ', '.join(realms))
         return realms
 
     def is_server(self):
         for dom in self._get_domain_objects():
             if 'ipa_server_mode' in dom.options \
                     and dom.options['ipa_server_mode']:
-                print 'SSSD is running in server mode'
+                print ('SSSD is running in server mode')
                 return True
-        print 'SSSD is running in client mode'
+        print ('SSSD is running in client mode')
         return False
 
     def enable_debug(self, debug_level=2, leave_higher=True):
-        print 'Setting SSSD debug level to ' + str(debug_level)
+        print ('Setting SSSD debug level to ' + str(debug_level))
         self._debug_all_services(debug_level, leave_higher)
         self._debug_all_domains(debug_level, leave_higher)
         self._write()
@@ -115,12 +115,12 @@ class Auditd(object):
     def _restart(self):
         # why not systemctl?
         # https://bugzilla.redhat.com/show_bug.cgi?id=1026648
-        print 'Restarting auditd'
+        print ('Restarting auditd')
         if call(['service', 'auditd', 'restart']) != 0:
             raise ExternalCommandError('Failed to restart auditd')
 
     def log_to_syslog(self):
-        print 'Enabling audisp syslog plugin'
+        print ('Enabling audisp syslog plugin')
         if call(['sed', '-i', 's/active = no/active = yes/',
                 self._AUDITD_SYSLOG_CONF]) != 0:
             raise ExternalCommandError(
@@ -128,7 +128,7 @@ class Auditd(object):
         self._restart()
 
     def revert(self):
-        print 'Disabling audisp syslog plugin'
+        print ('Disabling audisp syslog plugin')
         if call(['sed', '-i', 's/active = yes/active = no/',
                 self._AUDITD_SYSLOG_CONF]) != 0:
             raise ExternalCommandError(
@@ -286,7 +286,7 @@ class Rsyslog(object):
                 {'tag': 'ipa-389-audit', 'conf_file': '01.ipa-389'}
             logs[log_dir + 'errors'] = \
                 {'tag': 'ipa-389-errors', 'conf_file': '01.ipa-389'}
-        for f, v in logs.iteritems():
+        for f, v in logs.items():
             # Process tags for sssd
             if f.startswith('/var/log/sssd/'):
                 if sssd_server:
@@ -299,28 +299,28 @@ class Rsyslog(object):
                 if not os.path.isfile(f):
                     to_remove.append(f)
         for f in to_remove:
-            print 'Rsyslog: skipping "{0}", log file not found.'.format(f)
+            print ('Rsyslog: skipping "{0}", log file not found.'.format(f))
             del logs[f]
         return logs
 
     def _write_imfile_load(self):
         cfpath = self._create_conf_file_full_path('00.load-imfile-module')
-        print 'Rsyslog: enabling imfile module [{0}]'.format(cfpath)
+        print ('Rsyslog: enabling imfile module [{0}]'.format(cfpath))
         with open(cfpath, 'w') as cf:
             cf.write(self._IMFILE_LOAD)
 
     def _write_auditd_fwd_rule(self):
         cfpath = self._create_conf_file_full_path('01.ipa-auditd')
-        print 'Rsyslog: forwarding auditd logs to remote ruleset [{0}]'.format(
-            cfpath)
+        print ('Rsyslog: forwarding auditd logs to remote ruleset [{0}]'.format(
+            cfpath))
         with open(cfpath, 'w') as cf:
             cf.write(self._AUDITD_FORWARD_RULE.format(
                 ruleset=self._REMOTE_RULESET))
 
     def _write_authpriv_fwd_rule(self):
         cfpath = self._create_conf_file_full_path('01.ipa-authpriv')
-        print 'Rsyslog: forwarding authpriv logs to remote ruleset ' \
-            '[{0}]'.format(cfpath)
+        print ('Rsyslog: forwarding authpriv logs to remote ruleset ' \
+            '[{0}]'.format(cfpath))
         with open(cfpath, 'w') as cf:
             cf.write(self._AUTHPRIV_FORWARD_RULE.format(
                 ruleset=self._REMOTE_RULESET))
@@ -328,14 +328,14 @@ class Rsyslog(object):
     def _write_elastic_remote_rule(self, target, target_port):
         cfpath = self._create_conf_file_full_path(
             '00.remote-ipa-elastic-ruleset')
-        print 'Rsyslog: creating ruleset for forwarding logs [{0}]'.format(
-            cfpath)
+        print ('Rsyslog: creating ruleset for forwarding logs [{0}]'.format(
+            cfpath))
         with open(cfpath, 'w') as cf:
             cf.write(self._ELASTIC_REMOTE_RULESET_TEMPLATE.format(
                 ruleset=self._REMOTE_RULESET, target=target, target_port=target_port))
 
     def _restart(self):
-        print 'Enabling and restarting rsyslog service.'
+        print ('Enabling and restarting rsyslog service.')
         if call(['systemctl', 'enable', 'rsyslog']) != 0:
             raise ExternalCommandError('Failed to enable rsyslog service')
         if call(['systemctl', 'restart', 'rsyslog']) != 0:
@@ -343,8 +343,8 @@ class Rsyslog(object):
 
     def _clean_config(self):
         config_files = self._get_conf_files_full_path()
-        print 'Rsyslog: cleaning up config files:\n  ' + \
-            '\n  '.join(config_files)
+        print ('Rsyslog: cleaning up config files:\n  ' + \
+            '\n  '.join(config_files))
         for f in config_files:
             try:
                 os.remove(f)
@@ -358,9 +358,9 @@ class Rsyslog(object):
         self._write_elastic_remote_rule(target, target_port)
         self._write_auditd_fwd_rule()
         self._write_authpriv_fwd_rule()
-        for f, v in self._get_log_data().iteritems():
+        for f, v in self._get_log_data().items():
             cfpath = self._create_conf_file_full_path(v['conf_file'])
-            print 'Rsyslog: including "{0}" log [{1}]'.format(f, cfpath)
+            print ('Rsyslog: including "{0}" log [{1}]'.format(f, cfpath))
             with open(cfpath, 'a') as cf:
                 cf.write(self._create_imfile_rule(f, v['tag']))
         self._restart()
@@ -395,30 +395,30 @@ def main():
     args = parser.parse_args()
 
     if not args.target and not args.revert:
-        print 'One of the --target or --revert options must be specified'
+        print ('One of the --target or --revert options must be specified')
         sys.exit(1)
     elif args.target and args.revert:
-        print 'Only one of the --target or --revert option can be specified'
+        print ('Only one of the --target or --revert option can be specified')
         sys.exit(1)
 
     try:
         Requirements().check_all()
         if args.target:
             SSSD().enable_debug()
-            Auditd().log_to_syslog()
+            #Auditd().log_to_syslog()
             Rsyslog().write_config(args.target, args.target_port)
-            print 'Configuration completed successfully, IPA logs are ' \
-                'forwarded to ' + args.target + ':' + str(args.target_port)
+            print ('Configuration completed successfully, IPA logs are ' \
+                'forwarded to ' + args.target + ':' + str(args.target_port))
         elif args.revert:
             SSSD().enable_debug(1, False)
             Auditd().revert()
             Rsyslog().revert()
-            print 'Configuration successfully reverted to the default state'
+            print ('Configuration successfully reverted to the default state')
     except RequirementError as e:
-        print 'Failed requirement: ' + str(e)
+        print ('Failed requirement: ' + str(e))
         sys.exit(1)
     except ExternalCommandError as e:
-        print 'Failed to execute external command: ' + str(e)
+        print ('Failed to execute external command: ' + str(e))
         sys.exit(1)
 
     sys.exit(0)
