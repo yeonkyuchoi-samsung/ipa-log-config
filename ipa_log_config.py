@@ -405,7 +405,7 @@ def main():
         Requirements().check_all()
         if args.target:
             SSSD().enable_debug()
-            #Auditd().log_to_syslog()
+            Auditd().log_to_syslog()
             Rsyslog().write_config(args.target, args.target_port)
             print ('Configuration completed successfully, IPA logs are ' \
                 'forwarded to ' + args.target + ':' + str(args.target_port))
